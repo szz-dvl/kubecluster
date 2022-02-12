@@ -1,0 +1,20 @@
+ARG ALPINE_TAG=latest
+FROM alpine:${ALPINE_TAG}
+
+WORKDIR /root
+
+RUN apk add curl tar
+
+ARG CNI_VERSION
+ARG ARCH
+ARG CNI_VERSION
+ARG DOWNLOAD_DIR
+ARG CRICTL_VERSION
+
+RUN mkdir -p /opt/cni/bin
+RUN curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
+RUN curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
+
+RUN mkdir -p $DOWNLOAD_DIR
+
+ENTRYPOINT ["sleep", "3600"]

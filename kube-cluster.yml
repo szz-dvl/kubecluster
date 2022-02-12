@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  load_balancer:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - kube_controller
+    ports:
+      - "6443:6443"
+  
+  kube_controller:
+    image: kube-controller
+    build:
+      dockerfile: ./Dockerfile.controller
+      args:
+        CNI_VERSION: v1.0.1
+        ARCH: amd64
+        DOWNLOAD_DIR: /usr/local/bin
+        CRICTL_VERSION: v1.23.0
+        RELEASE_VERSION: v0.12.0
+        ALPINE_TAG: latest
+        K8S_RELEASE: ${K8S_RELEASE}
+    hostname: kube_controller
+    expose:
+      - "6443"
+
+  kube_worker:
+    image: kube-worker
+    build:
+      dockerfile: ./Dockerfile.worker
+      args:
+        CNI_VERSION: v1.0.1
+        ARCH: amd64
+        DOWNLOAD_DIR: /usr/local/bin
+        CRICTL_VERSION: v1.23.0
+        RELEASE_VERSION: v0.12.0
+        ALPINE_TAG: latest
+        K8S_RELEASE: ${K8S_RELEASE}
+    hostname: kube_controller
