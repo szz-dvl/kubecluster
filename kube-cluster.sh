@@ -52,9 +52,11 @@ while getopts "$optspec" optchar; do
 		    ;;
                 list)
 		    list="true"
+	            flush_toggle $2
                     ;;
                 stop)
 		    stop="true"
+		    flush_toggle $2
                     ;;
                 *)
 		    IFS="," read key val <<< "$(parse_long $OPTARG)"
@@ -74,9 +76,11 @@ while getopts "$optspec" optchar; do
             ;;
         l)
 	    list="true"
+	    flush_toggle $2
             ;;
         s)
 	    stop="true"
+	    flush_toggle $2
             ;;
 	*)
 	    error "unexpected error" -2
