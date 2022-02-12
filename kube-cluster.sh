@@ -1,11 +1,12 @@
 #!/bin/bash
 
-workers=1
-controllers=1
 file=kube-cluster.yml
-controller_update="false"
-worker_update="false"
 list="false"
+workers=$(docker-compose -f $file ps 2>/dev/null | grep "worker" | wc -l)
+controllers=$(docker-compose -f $file ps 2>/dev/null | grep "controller" | wc -l)
+
+if [ $workers -eq 0 ]; then workers=1; fi
+if [ $controllers -eq 0 ]; then controllers=1; fi
 
 parse_long() {
 	
@@ -31,7 +32,7 @@ error() {
 
 }
 
-optspec="f:w:c:-:bl"
+optspec="f:w:c:-:bls"
 
 while getopts "$optspec" optchar; do
     case "${optchar}" in
@@ -40,20 +41,20 @@ while getopts "$optspec" optchar; do
                 workers=*)
 	            IFS="," read key val <<< "$(parse_long $OPTARG)"
 		    workers=$val
-	    	    worker_update="true"
                     ;;
                 controllers=*)
 	            IFS="," read key val <<< "$(parse_long $OPTARG)"
 		    controllers=$val
-		    controller_update="true"
                     ;;
                 file=*)
 	            IFS="," read key val <<< "$(parse_long $OPTARG)"
 		    file=$val
 		    ;;
                 list)
-	            IFS="," read key val <<< "$(parse_long $OPTARG)"
 		    list="true"
+                    ;;
+                stop)
+		    stop="true"
                     ;;
                 *)
 		    IFS="," read key val <<< "$(parse_long $OPTARG)"
@@ -63,11 +64,9 @@ while getopts "$optspec" optchar; do
                     ;;
             esac;;
         w)
-	    worker_update="true"
 	    workers=$OPTARG
             ;;
         c)
-	    controller_update="true"
 	    controllers=$OPTARG
             ;;
         f)
@@ -76,12 +75,14 @@ while getopts "$optspec" optchar; do
         l)
 	    list="true"
             ;;
+        s)
+	    stop="true"
+            ;;
 	*)
 	    error "unexpected error" -2
 	    ;;
     esac
 done
-
 
 if [ -z "$K8S_RELEASE" ]; then
 	export K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
@@ -92,24 +93,10 @@ if [ "$list" == "true" ]; then
 	exit 0
 fi
 
-CMD="docker-compose -f $file up -d"
-
-if [ "$worker_update" == "true" ]; then
-	CMD+=" --scale kube_worker=$workers"
+if [ "$stop" == "true" ]; then
+	docker-compose -f $file down
+	exit 0
 fi
 
-if [ "$controller_update" == "true" ]; then
-	CMD+=" --scale kube_controller=$controllers"
-fi
-
-if [ "$worker_update" == "true" ] || [ "$controller_update" == "true" ]; then
-	$CMD
-else
-	running=$(docker-compose -f $file ps 2>/dev/null | tail -n +2)
-	
-	if [ -z "$running" ]; then
-		$CMD
-	else
-		error "nothing to do ... " -4
-	fi
-fi
+#running=$(docker-compose -f $file ps 2>/dev/null | tail -n +2)
+docker-compose -f $file up -d --scale kube_worker=$workers --scale kube_controller=$controllers
