@@ -103,4 +103,4 @@ if [ "$stop" == "true" ]; then
 fi
 
 #running=$(docker-compose -f $file ps 2>/dev/null | tail -n +2)
-docker-compose -f $file up -d --scale kube_worker=$workers --scale kube_controller=$controllers
+docker-compose -f $file up -d --scale kube_worker=$workers --scale kube_controller=$controllers --no-recreate
